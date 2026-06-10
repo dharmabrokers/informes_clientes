@@ -250,7 +250,7 @@ function Login({ data, onEnter }) {
         <input type="password" placeholder="Contraseña" value={p} onChange={e=>setP(e.target.value)} onKeyDown={e=>e.key==='Enter'&&go()} />
         <div className="err">{err}</div>
         <button className="btn" style={{width:'100%',background:'linear-gradient(135deg,var(--gold),var(--gold-soft))',color:'var(--dark)',border:'none',padding:'.85rem',borderRadius:'50px',fontWeight:700,fontFamily:'Poppins',cursor:'pointer'}} onClick={go}>Entrar</button>
-        <div className="hint">Demo · cliente: <b>aurea / dharma</b> · admin: <b>admin / dharma</b></div>
+
       </div>
     </div>
   );
