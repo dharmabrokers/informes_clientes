@@ -106,9 +106,7 @@ function App() {
         <div className="spacer"></div>
         <div className="pn-actions">
           <span className="pn-save"><span className="d" style={{background: saved?'var(--ok)':'var(--warn)'}}></span>{saved?'Guardado':'Guardando…'}</span>
-          <span className={'pn-chip mode'+(admin?' on':'')} onClick={()=>setAdmin(a=>!a)}>
-            <Icon name={admin?'pencil':'eye'} size={14}/> {admin?'Modo admin':'Vista cliente'}
-          </span>
+
           {admin && <span className="pn-chip" onClick={exportJSON}><Icon name="download" size={14}/> Exportar JSON</span>}
           {admin && <span className="pn-chip" onClick={resetAll}><Icon name="reset" size={14}/></span>}
           <span className="pn-chip" onClick={()=>setAuth(false)}><Icon name="logout" size={14}/></span>
