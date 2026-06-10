@@ -158,7 +158,7 @@ function Fase2CTA() {
     <div className="cta-fase2">
       <h3>¿Listo para <em>ejecutar la hoja de ruta?</em></h3>
       <p>Este diagnóstico es 100 % tuyo y autónomo. Si quieres, lo ejecutamos juntos en la Fase 2 — y el coste de la Fase 1 se descuenta al completo.</p>
-      <button className="btn" onClick={()=>alert('Demo: aquí enlazaría con la reserva de Fase 2.')}>Hablar de la Fase 2 <Icon name="arrowright" size={15} style={{verticalAlign:'-2px'}}/></button>
+      <button className="btn" onClick={()=>window.open('https://dharmabrokers.com/fase-2-implementacion','_blank')}>Hablar de la Fase 2 <Icon name="arrowright" size={15} style={{verticalAlign:'-2px'}}/></button>
     </div>
   );
 }
