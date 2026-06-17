@@ -91,6 +91,17 @@ function EditableText({ value, onCommit, admin, tag = 'div', className = '', sty
 
 /* ---------- Valuation engine (compartido panel + resumen) ---------- */
 const VAL_FACTOR_KEYS = ['geography','market','size','growth','years','recurrence','concentration','ebitdaQuality','margin','backlog','diversification','supplier'];
+/* Respaldos para report.json que no incluyen estas tablas (p.ej. cargados de Gist) */
+const SECTOR_RANGES = {
+  "Inmobiliario / construcción": [3.5, 5.0],
+  "Servicios profesionales":     [4.0, 6.0],
+  "Retail / hostelería":         [3.0, 4.5],
+  "Industrial / B2B":            [4.5, 6.0],
+  "eCommerce / digital":         [4.5, 7.0],
+  "SaaS":                        [5.0, 12.0]
+};
+const GEO_PRESETS = { "España":1.00,"DACH / Alemania":1.15,"Nórdicos":1.12,"Reino Unido":1.08,"Francia":1.05,"Benelux":1.06,"Italia":0.96,"Portugal":0.94,"Europa del Este":0.85,"LATAM":0.80,"EE.UU.":1.20 };
+const VAL_METHODOLOGY = "Método de múltiplos de EBITDA. El múltiplo base es una mediana de mercado por sector, ajustada por geografía, momento de ciclo, tamaño, crecimiento, antigüedad, recurrencia y dependencia del fundador. Todas las palancas son editables.";
 function computeValuation(v) {
   const f = v.factors || {};
   const nonDep = VAL_FACTOR_KEYS.reduce((p,k)=> p * (f[k] ? f[k].value : 1), v.multipleBase || 0);
@@ -116,4 +127,4 @@ function Stepper({ value, step = 0.01, min = 0.1, max = 20, onChange, fmt }) {
   );
 }
 
-Object.assign(window, { Icon, EditableText, Stepper, computeValuation, fmtEur, fmtEurFull, clamp, scoreClass, scoreBar, statusBadge });
+Object.assign(window, { Icon, EditableText, Stepper, computeValuation, fmtEur, fmtEurFull, clamp, scoreClass, scoreBar, statusBadge, SECTOR_RANGES, GEO_PRESETS, VAL_METHODOLOGY });
