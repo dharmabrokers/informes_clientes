@@ -328,6 +328,93 @@ var PAGES = [
   '</div>' },
 ];
 
+/* ====== Datos del cliente (Gist/panel) → genera las páginas dinámicamente ====== */
+var BOOK_GID=(function(){ try{ return new URLSearchParams(location.search).get('id'); }catch(e){ return null; } })();
+function readPanelData(){ try{ var k=BOOK_GID?('dharma_panel_'+BOOK_GID):'dharma_panel_demo'; var r=localStorage.getItem(k); if(r) return JSON.parse(r); }catch(e){} return null; }
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function bEur(n){ n=Math.round(n||0); var a=Math.abs(n); if(a>=1000000){ return (Math.round(n/100000)/10).toString().replace('.',',')+' M€'; } if(a>=1000){ return Math.round(n/1000)+' K€'; } return n+' €'; }
+function bVal(v){ var KEYS=['geography','market','size','growth','years','recurrence','concentration','ebitdaQuality','margin','backlog','diversification','supplier']; var f=(v&&v.factors)||{}; var nonDep=KEYS.reduce(function(p,k){return p*(f[k]?f[k].value:1);}, (v&&v.multipleBase)||0); var sc={}; ['minimo','realista','objetivo'].forEach(function(k){ var s=(v&&v.scenarios&&v.scenarios[k])||{depFactor:1}; sc[k]={euros:((v&&v.ebitda)||0)*nonDep*s.depFactor, mult:nonDep*s.depFactor}; }); return sc; }
+function buildPages(d){
+  d=d||{}; var c=d.config||{}, t=d.thesis||{}, v=d.valuation||{}, fo=d.founder||{}, ind=d.indices||{};
+  var sc=bVal(v); var P=[];
+  var scol=function(s){ return s==='critical'?'#ff6b6b':s==='warning'?'var(--warn)':'var(--ok)'; };
+  P.push({title:'Portada', html:
+   '<div class="cover"><div class="ct"><img class="logo" src="assets/logo-compass-white.png" alt="">'+
+   '<span class="conf">Confidencial · solo destinatario</span>'+
+   '<h1>Informe de Diagnóstico Estratégico</h1>'+
+   '<div class="sub">Análisis financiero, operativo y de valoración · Fase 1</div></div>'+
+   '<div class="foot"><div class="co">'+esc(c.companyName||'')+'</div>'+
+   '<div class="meta">'+esc(c.sector||'')+(c.location?' · '+esc(c.location):'')+' · Preparado por '+esc(c.consultant||'Dharma Brokers')+'</div></div></div>' });
+  P.push({title:'Cómo leerlo', html:
+   '<div class="pg"><div class="ph">Orientación</div><h2>Cómo leer <em>este informe</em>.</h2>'+
+   '<p>Un diagnóstico priorizado, no exhaustivo: el 80 % de los factores que más afectan al valor de su empresa y a su autonomía operativa. Cada afirmación tiene un número detrás.</p>'+
+   '<div class="rule"></div><h3>Recorrido</h3><ul>'+
+   '<li><b>Resumen ejecutivo</b> — la tesis en una página.</li>'+
+   '<li><b>Valoración</b> — tres escenarios y su metodología.</li>'+
+   '<li><b>Dependencia del fundador</b> — la cifra que descuentan los compradores.</li>'+
+   '<li><b>Bloqueos críticos</b> — con coste de inacción.</li>'+
+   '<li><b>Diagnóstico por área</b> y <b>hoja de ruta de 90 días</b>.</li>'+
+   '<li><b>Pre-auditoría</b> y siguiente paso.</li></ul></div>' });
+  P.push({title:'Resumen ejecutivo', html:
+   '<div class="pg"><div class="ph">01 · Resumen ejecutivo</div><h2>'+esc(t.headline||'Resumen ejecutivo')+'</h2>'+
+   ((t.paragraphs||[]).map(function(p,i){ return i===0?('<p class="lead">'+esc(p)+'</p>'):('<p>'+esc(p)+'</p>'); }).join(''))+
+   '<div class="statband">'+
+     '<div class="sb"><div class="v" style="color:#ff6b6b">'+(ind.autonomy!=null?ind.autonomy:'—')+'<span style="font-size:.7rem">/10</span></div><div class="l">Autonomía</div></div>'+
+     '<div class="sb"><div class="v" style="color:var(--warn)">'+(ind.saleReadiness!=null?ind.saleReadiness:'—')+'</div><div class="l">Prep. venta</div></div>'+
+     '<div class="sb"><div class="v" style="color:var(--warn)">'+(ind.optimization!=null?ind.optimization:'—')+'</div><div class="l">Salud operativa</div></div>'+
+   '</div></div>' });
+  P.push({title:'Valoración', html:
+   '<div class="pg"><div class="ph">02 · Valoración</div><h2>Cuánto vale <em>hoy</em> — y cuánto podría valer.</h2>'+
+   '<p>Múltiplo base <b>'+(Number(v.multipleBase)||0).toFixed(1)+'×</b> sobre un EBITDA normalizado de <b>'+bEur(v.ebitda)+'</b>, ajustado por geografía, ciclo, tamaño, crecimiento, recurrencia y dependencia del fundador.</p>'+
+   scbar([['Mínimo viable',55,bEur(sc.minimo.euros),'linear-gradient(90deg,#ef4444,#f87171)'],
+          ['Realista (hoy)',78,bEur(sc.realista.euros),'linear-gradient(90deg,#FFD700,#FFA500)'],
+          ['Objetivo',100,bEur(sc.objetivo.euros),'linear-gradient(90deg,#FFA500,#22c55e)']])+
+   '<div class="kv"><span>EBITDA normalizado</span><span>'+bEur(v.ebitda)+'</span></div>'+
+   '<div class="kv"><span>Múltiplo efectivo (realista)</span><span>'+(sc.realista.mult).toFixed(2)+'×</span></div>'+
+   '<p style="margin-top:1rem">Reducir la dependencia del fundador de alta a baja añade <b class="gold">'+bEur(sc.objetivo.euros-sc.realista.euros)+'</b> de valor — sin tocar la facturación.</p>'+
+   '<p class="dim" style="font-size:.78rem">Rango orientativo. Una valoración formal requiere due diligence y comparables recientes.</p></div>' });
+  var areasF=fo.byArea||[]; var maxH=Math.max.apply(null,[1].concat(areasF.map(function(a){return a.hours||0;})));
+  P.push({title:'Dependencia del fundador', html:
+   '<div class="pg"><div class="ph">03 · Dependencia</div><h2>Dónde se va el tiempo <em>del dueño</em>.</h2>'+
+   '<p>El fundador dedica <b>'+(fo.hoursPerWeek||0)+' horas semanales</b> a la operativa, con un índice de dependencia de <b style="color:#ff6b6b">'+(fo.dependencyScore!=null?fo.dependencyScore:'—')+'/10</b>.</p>'+
+   scbar(areasF.map(function(a){ var col=a.criticality==='alta'?'linear-gradient(90deg,#ef4444,#f87171)':(a.criticality==='media'?'linear-gradient(90deg,#FFA500,#FFD700)':'linear-gradient(90deg,#38bdf8,#7dd3fc)'); return [esc(a.area), Math.round((a.hours||0)/maxH*100), (a.hours||0)+' h', col]; }))+
+   ((fo.undocumentedRelationships&&fo.undocumentedRelationships.length)?('<h3>Relaciones críticas no documentadas</h3><ul>'+fo.undocumentedRelationships.map(function(r){return '<li>'+esc(r)+'</li>';}).join('')+'</ul>'):'')+
+   '<div class="quotebox">Todo lo que se va con el fundador si él se va. Es lo primero que un comprador exige blindar.</div></div>' });
+  (d.blockers||[]).forEach(function(b,i){ P.push({title:'Bloqueo '+(b.rank||i+1)+' · '+esc(b.title||''), html:
+   '<div class="pg"><div class="ph">04 · Bloqueo crítico #'+(b.rank||i+1)+'</div><h2>'+esc(b.title||'')+'</h2>'+
+   (b.coiPerQuarter?'<span class="coi">COI: '+bEur(b.coiPerQuarter)+' / trimestre</span>':'')+
+   '<p style="margin-top:1rem">'+esc(b.description||'')+'</p>'+
+   ((b.evidence&&b.evidence.length)?('<h3>Evidencia</h3><ul>'+b.evidence.map(function(e){return '<li>'+esc(e)+'</li>';}).join('')+'</ul>'):'')+
+   (b.recommendation?'<div class="quotebox">Recomendación: '+esc(b.recommendation)+'</div>':'')+'</div>' }); });
+  P.push({title:'Diagnóstico por área', html:
+   '<div class="pg"><div class="ph">05 · Diagnóstico</div><h2>Las áreas, <em>sin maquillaje</em>.</h2><div class="areagrid">'+
+   ((d.areas||[]).map(function(a){ var note=(a.keyFindings&&a.keyFindings[0])||(a.description&&a.description[0])||''; var lbl=a.status==='critical'?'· crítico':(a.status==='warning'?'· atención':'· ok'); return '<div class="ar"><div class="as" style="color:'+scol(a.status)+'">'+(a.score!=null?a.score:'—')+'</div><div><b>'+esc(a.name)+'</b> <span style="color:'+scol(a.status)+';font-size:.72rem">'+lbl+'</span><p>'+esc(note)+'</p></div></div>'; }).join(''))+
+   '</div></div>' });
+  var rm=d.roadmap||[]; var sumVal=rm.reduce(function(s,r){return s+(r.valuationImpact||0);},0); var sumH=rm.reduce(function(s,r){return s+(r.hoursSaved||0);},0);
+  var win=function(w){ var li=rm.filter(function(r){return r.window===w;}).map(function(r){return '<li>'+esc(r.title)+'</li>';}).join(''); return li||'<li class="dim">—</li>'; };
+  P.push({title:'Hoja de ruta 90 días', html:
+   '<div class="pg"><div class="ph">06 · Hoja de ruta</div><h2>90 días. <em>Accionable, no genérica</em>.</h2>'+
+   '<div class="statband"><div class="sb"><div class="v gold">+'+bEur(sumVal)+'</div><div class="l">Valor potencial</div></div>'+
+   '<div class="sb"><div class="v">'+sumH+' h</div><div class="l">Horas/mes liberadas</div></div></div>'+
+   '<h3>Días 0-30 · cimientos</h3><ul>'+win('0-30')+'</ul>'+
+   '<h3>Días 30-60 · transferir</h3><ul>'+win('30-60')+'</ul>'+
+   '<h3>Días 60-90 · escalar</h3><ul>'+win('60-90')+'</ul></div>' });
+  var ag=d.auditGaps||[]; var stTxt=function(s){return s==='complete'?'Completo':(s==='partial'?'Parcial':'Falta');}; var stCol=function(s){return s==='complete'?'var(--ok)':(s==='partial'?'var(--warn)':'#ff8585');};
+  P.push({title:'Pre-auditoría y conclusión', html:
+   '<div class="pg"><div class="ph">07 · Pre-auditoría · conclusión</div><h2>Lo que pediría <em>un comprador serio</em>.</h2>'+
+   ag.map(function(a){ return '<div class="kv"><span>'+esc(a.document)+'</span><span style="color:'+stCol(a.status)+'">'+stTxt(a.status)+'</span></div>'; }).join('')+
+   '<div class="rule"></div><h3>Conclusión</h3>'+
+   '<p>'+esc((t.paragraphs&&t.paragraphs[t.paragraphs.length-1])||'')+'</p>'+
+   '<p>El siguiente paso natural es ejecutar la hoja de ruta de 90 días.</p></div>' });
+  P.push({title:'Contraportada', html:
+   '<div class="cover"><div class="ct"><img class="logo" src="assets/logo-compass-white.png" alt="">'+
+   '<h1 style="font-size:clamp(1.7rem,4vw,2.4rem)">¿Listo para ejecutar la hoja de ruta?</h1>'+
+   '<div class="sub">Este diagnóstico es 100 % suyo y autónomo. Si decide ejecutarlo con nosotros en la Fase 2, el coste de la Fase 1 se descuenta al completo.</div></div>'+
+   '<div class="foot"><div class="co" style="font-size:1.1rem">Dharma Brokers Consulting</div>'+
+   '<div class="meta">Operaciones confidenciales · Europa · LATAM · EE.UU. · © 2026</div></div></div>' });
+  return P;
+}
+
 /* ============================== MOTOR DEL LIBRO ============================== */
 var KEY='dharma_book_pg';
 var cur = (function(){ var n=parseInt(localStorage.getItem(KEY),10); return (isFinite(n)&&n>=0&&n<PAGES.length)?n:0; })();
@@ -384,19 +471,38 @@ document.querySelector('.book').addEventListener('touchend',function(e){ if(tx==
 
 /* index drawer */
 var drawer=document.getElementById('drawer'), list=document.getElementById('drawerList');
-PAGES.forEach(function(p,i){
-  var d=document.createElement('div'); d.className='it';
-  d.innerHTML='<span class="ix">'+(i+1)+'</span><span class="ti">'+p.title+'</span>';
-  d.onclick=function(){ goTo(i); closeDrawer(); };
-  list.appendChild(d);
-});
+function buildDrawer(){
+  list.innerHTML='';
+  PAGES.forEach(function(p,i){
+    var el=document.createElement('div'); el.className='it';
+    el.innerHTML='<span class="ix">'+(i+1)+'</span><span class="ti">'+p.title+'</span>';
+    el.onclick=function(){ goTo(i); closeDrawer(); };
+    list.appendChild(el);
+  });
+}
 function openDrawer(){drawer.classList.add('open');}
 function closeDrawer(){drawer.classList.remove('open');}
 document.getElementById('idxBtn').onclick=openDrawer;
 document.getElementById('drawerClose').onclick=closeDrawer;
 drawer.addEventListener('click',function(e){ if(e.target===drawer) closeDrawer(); });
 
-showStatic();
+function render(){ if(cur>=PAGES.length) cur=0; buildDrawer(); showStatic(); }
+
+/* Carga de datos del cliente y construye el libro. Respaldo: PAGES estatico (demo). */
+(function(){
+  var backLink=document.querySelector('.topbar a.back');
+  if(backLink) backLink.href='index.html'+(BOOK_GID?('?id='+encodeURIComponent(BOOK_GID)):'');
+  var applied=false;
+  function apply(d){ if(applied) return; applied=true; if(d){ PAGES=buildPages(d); document.title='Informe de Diagnóstico · '+esc((d.config&&d.config.companyName)||'')+' — Dharma Brokers'; } cur=0; render(); }
+  var ls=readPanelData();
+  if(ls){ apply(ls); }
+  else if(BOOK_GID){
+    fetch('https://api.github.com/gists/'+encodeURIComponent(BOOK_GID),{headers:{'Accept':'application/vnd.github+json'}})
+      .then(function(r){ return r.json(); })
+      .then(function(g){ var f=g.files&&(g.files['report.json']||Object.values(g.files)[0]); apply(f&&f.content?JSON.parse(f.content):null); })
+      .catch(function(){ apply(null); });
+  } else { apply(null); }
+})();
 </script>
 </body>
 </html>

@@ -180,7 +180,7 @@ function NarrativeView({ data }) {
           <h3>Informe en formato libro digital</h3>
           <p>La versión premium, paginada y navegable — pensada para presentar y compartir. Pasa las páginas como un documento impreso.</p>
         </div>
-        <a className="bl-btn" href="informe.html"><Icon name="arrowright" size={16}/> Abrir libro</a>
+        <a className="bl-btn" href={'informe.html'+(GID?('?id='+encodeURIComponent(GID)):'')}><Icon name="arrowright" size={16}/> Abrir libro</a>
       </div>
 
       <div className="nv-doc">

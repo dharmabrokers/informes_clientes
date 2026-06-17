@@ -56,7 +56,7 @@ function ResumenView({ data, patch, admin }) {
         <div className="panel">
           <div className="panel-h"><Icon name="alertoct" size={18}/> Bloqueo #1</div>
           <h4 style={{fontFamily:'Oswald',fontSize:'1.15rem',color:'#fff',margin:'0 0 .4rem'}}>{topBlocker.title}</h4>
-          <p className="tiny muted" style={{lineHeight:1.6}}>{topBlocker.description.slice(0,180)}…</p>
+          <p className="tiny muted" style={{lineHeight:1.6}}>{(s=>{const i=s.indexOf('. ');return i>0?s.slice(0,i+1):s;})(topBlocker.description)}</p>
           <p className="tiny" style={{marginTop:'.7rem'}}>Coste de inacción: <b className="c-crit">{fmtEur(topBlocker.coiPerQuarter)}/trimestre</b></p>
         </div>
       </div>
@@ -68,6 +68,8 @@ function ResumenView({ data, patch, admin }) {
 function ValuationView({ data, patch, admin }) {
   const v = data.valuation;
   const [showRef, setShowRef] = useState(false);
+  const sectorRanges = v.sectorRanges || SECTOR_RANGES;
+  const geoPresets = v.geoPresets || GEO_PRESETS;
   const comp = computeValuation(v);
   const sc = comp.scenarios;
   const lo = sc.minimo.euros, hi = sc.objetivo.euros, span = hi - lo || 1;
@@ -81,15 +83,15 @@ function ValuationView({ data, patch, admin }) {
   const setDep = (k, val) => patch(d => { d.valuation.scenarios[k].depFactor = val; });
   const pickSector = (name) => patch(d => {
     d.valuation.sector = name;
-    const r = d.valuation.sectorRanges[name];
+    const r = (d.valuation.sectorRanges || SECTOR_RANGES)[name];
     if (r) d.valuation.multipleBase = Math.round(((r[0]+r[1])/2) * 100) / 100;
   });
   const pickGeo = (name) => patch(d => {
     d.valuation.geography = name;
-    const g = d.valuation.geoPresets[name];
+    const g = (d.valuation.geoPresets || GEO_PRESETS)[name];
     if (g != null) d.valuation.factors.geography.value = g;
   });
-  const range = (v.sectorRanges && v.sectorRanges[v.sector]) || null;
+  const range = sectorRanges[v.sector] || null;
 
   return (
     <div>
@@ -131,14 +133,14 @@ function ValuationView({ data, patch, admin }) {
           <div className="vs-field">
             <label>Sector</label>
             {admin
-              ? <select className="vsel" value={v.sector} onChange={e=>pickSector(e.target.value)}>{Object.keys(v.sectorRanges).map(s=><option key={s} value={s}>{s}</option>)}</select>
+              ? <select className="vsel" value={v.sector} onChange={e=>pickSector(e.target.value)}>{Object.keys(sectorRanges).map(s=><option key={s} value={s}>{s}</option>)}</select>
               : <div className="vs-val">{v.sector}</div>}
             {range && <span className="vs-range">mercado {range[0].toFixed(1)}–{range[1].toFixed(1)}×</span>}
           </div>
           <div className="vs-field">
             <label>Geografía</label>
             {admin
-              ? <select className="vsel" value={v.geography} onChange={e=>pickGeo(e.target.value)}>{Object.keys(v.geoPresets).map(g=><option key={g} value={g}>{g}</option>)}</select>
+              ? <select className="vsel" value={v.geography} onChange={e=>pickGeo(e.target.value)}>{Object.keys(geoPresets).map(g=><option key={g} value={g}>{g}</option>)}</select>
               : <div className="vs-val">{v.geography}</div>}
           </div>
         </div>
@@ -192,10 +194,10 @@ function ValuationView({ data, patch, admin }) {
         <div className="panel">
           <div className="panel-h"><Icon name="bars" size={18}/> Múltiplos de mercado por sector</div>
           <p className="tiny muted" style={{margin:'0 0 .7rem'}}>No son fijos: son una mediana que varía por geografía, tamaño y ciclo. Rango de referencia (mediana empresa europea, últimos 3 años):</p>
-          {Object.entries(v.sectorRanges).map(([s,r])=>(
+          {Object.entries(sectorRanges).map(([s,r])=>(
             <div className="vrow" key={s}><span style={{color: s===v.sector?'var(--gold)':undefined, fontWeight: s===v.sector?600:400}}>{s}</span><span>{r[0].toFixed(1)}–{r[1].toFixed(1)}×</span></div>
           ))}
-          <p className="tiny muted" style={{marginTop:'.7rem'}}>{v.methodology}</p>
+          <p className="tiny muted" style={{marginTop:'.7rem'}}>{v.methodology || VAL_METHODOLOGY}</p>
         </div>
       </div>
     </div>
